@@ -15,7 +15,7 @@ USING
           --version|-v v0.2.1
 
     $ curl URL | bash -s -- REPO FILE \\
-      [--end-message "message"|--help-app|--app-name "my name"] -- \\
+      [--end-message "message"|--app-name "my name"] -- \\
       [--file FILE|-f FILE|--filename NAME|-n NAME|--versions|--version 0.1.2]
 
     $ curl URL | bash -s -- REPO FILE [SCRIPT OPTIONS] -- [USER OPTIONS]
@@ -26,8 +26,14 @@ SCRIPT SPECIFIC OPTIONS
   --end-message This will be showed in the end of downloading.
                 %s will be replaced with full path to downloaded file.
                 Default: "Binary file: %s\n"
-  --app-help    Show help for application downloader
-  --app-name    Use passed name in help.
+  --app-name    Use passed name in 3rd party downloader help.
+                Use "_" instead spaces in the name. "_" will be replaced with spaces.
+  --downloader  Custom 3rd party downloader path in repository.
+                Uses in 3rd party downloader help.
+                Example: my-branch/my/path/downloader
+                Default: master/downloader
+                Where "master" is a branch name.
+  --help        Show this help.
 
 END USER OPTIONS
   --versions    Show created tags.
@@ -36,8 +42,7 @@ END USER OPTIONS
   --file|-f     Path to save downloaded file.
   --filename|-n Name to downloaded file by default path.
                 (/usr/local/bin or /usr/bin)
-  --help        Show this help. 
-
+  --help        Show help for 3rd party downloader.
 ```
 
 # Create your own downloader
@@ -54,10 +59,12 @@ set -o errexit
 set -o pipefail
 set -o nounset
 #set -o xtrace
+
 # Download
-curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- \\
-    your-vendor/some-name \\
-    dir/some-file.sh -- --filename some-file \$@
+curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- \
+    your-vendor/some-name \
+    dir/some-file.sh --app-name "My_Name" -- \
+    --filename some-file \$@
 ```
 
 See example in [semversort project](/../../../../rikby/semversort/blob/master/download)
