@@ -45,6 +45,12 @@ END USER OPTIONS
   --help        Show help for 3rd party downloader.
 ```
 
+## Short link
+[Downloader link](https://raw.github.com/rikby/bin-downloader/master/download) has a short link: https://goo.gl/ve2Xvw
+```
+curl -Ls https://goo.gl/ve2Xvw | bash -s -- --help
+```
+
 # Create your own downloader
 Create your "download" script in your master branch in the repository root.
 Please replace "your-vendor/some-name" string with your path.
