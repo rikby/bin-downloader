@@ -13,7 +13,7 @@ set -o nounset
 show_help () {
   cat <<-EOF
 GitHub binary scripts downloader
-Version: 0.1.0
+Version: 0.1.0 (2016-11-24)
 
 USING
   Download your binary file
