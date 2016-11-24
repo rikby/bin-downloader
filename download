@@ -63,7 +63,7 @@ YOUR DOWNLOAD SCRIPT
   # Download
   curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- \\
       your-vendor/some-name \\
-      dir/some-file.sh -- \$@
+      dir/some-file.sh -- --filename some-file \$@
 EOF
 }
 
