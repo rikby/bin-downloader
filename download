@@ -33,8 +33,14 @@ SCRIPT SPECIFIC OPTIONS
   --end-message This will be showed in the end of downloading.
                 %s will be replaced with full path to downloaded file.
                 Default: "Binary file: %s\n"
-  --app-name    Use passed name in help.
-  --help        Show this help. 
+  --app-name    Use passed name in 3rd party downloader help.
+                Use "_" instead spaces in the name. "_" will be replaced with spaces.
+  --downloader  Custom 3rd party downloader path in repository.
+                Uses in 3rd party downloader help.
+                Example: my-branch/my/path/downloader
+                Default: master/downloader
+                Where "master" is a branch name.
+  --help        Show this help.
 
 END USER OPTIONS
   --versions    Show created tags.
@@ -43,7 +49,7 @@ END USER OPTIONS
   --file|-f     Path to save downloaded file.
   --filename|-n Name to downloaded file by default path.
                 (/usr/local/bin or /usr/bin)
-  --help        Show application help.
+  --help        Show help for 3rd party downloader.
 
 YOUR DOWNLOAD SCRIPT
 
@@ -64,7 +70,7 @@ YOUR DOWNLOAD SCRIPT
   # Download
   curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- \\
       your-vendor/some-name \\
-      dir/some-file.sh -- --filename some-file \$@
+      dir/some-file.sh --app-name "My_Name" -- --filename some-file \$@
 EOF
 }
 
@@ -75,10 +81,10 @@ ${app_name}
 
 USING
   Download your binary file
-    $ curl -Ls https://raw.github.com/${repo_name}/master/download | bash
+    $ curl -Ls https://raw.github.com/${repo_name}/${downloader:-master/download} | bash
 
   Or use some options
-    $ curl -Ls https://raw.github.com/${repo_name}/master/download | bash -s -- \\
+    $ curl -Ls https://raw.github.com/${repo_name}/${downloader:-master/download} | bash -s -- \\
           --filename|-f some-file \\
           --version|-v v0.2.1
 
@@ -115,11 +121,13 @@ parse_options () {
   # validate and redefine options
   OPTS=$(getopt \
     -o hlv:f:r:p:n: \
-    -l help,versions,version:,file:,repo-file:,repo:,filename:,app-name \
+    -l help,versions,version:,file:,repo-file:,repo:,filename:,app-name:,downloader: \
     -- "$@")
   eval set -- "${OPTS}"
+  echo ${OPTS}
 
   while true; do
+  echo "${1:-}"
     [ -z "${1:-}" ] && break
     case "${1}" in
       # Message in the end. %s will be replaced with a created file.
@@ -128,7 +136,11 @@ parse_options () {
         shift 2;
         ;;
       --app-name)
-        app_name="$2";
+        app_name=$(echo $2 | tr '_' ' ');
+        shift 2;
+        ;;
+      --downloader)
+        downloader="$2"
         shift 2;
         ;;
       # Show help
@@ -268,7 +280,7 @@ show_end_message () {
 download_script () {
   local version end_message action \
     version output_file output_filename \
-    repo_name repo_file app_name
+    repo_name repo_file app_name downloader
 
   end_message='Binary file: %s'"\n"
   action='download'
