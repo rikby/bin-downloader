@@ -3,6 +3,10 @@
 # See help:
 #   $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- --help
 
+: <<'LCS'
+
+LCS
+
 set -o errexit
 set -o pipefail
 set -o nounset
@@ -61,7 +65,7 @@ YOUR DOWNLOAD SCRIPT
   #set -o xtrace
 
   # Download
-  $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- \\
+  curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- \\
       your-vendor/some-name \\
       dir/some-file.sh -- \$@
 EOF
@@ -294,3 +298,4 @@ download_script () {
 }
 
 download_script $@
+
