@@ -36,6 +36,7 @@ END USER OPTIONS
   --file|-f     Path to save downloaded file.
   --filename|-n Name to downloaded file by default path.
                 (/usr/local/bin or /usr/bin)
+  --help        Show this help. 
 
 ```
 
