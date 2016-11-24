@@ -1,0 +1,202 @@
+#!/usr/bin/env bash
+# Fetch binary file from github repository
+# See help:
+#   $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download --help
+
+set -o errexit
+set -o pipefail
+set -o nounset
+#set -o xtrace
+
+show_help () {
+  cat <<-'EOF'
+GitHub binary scripts downloader
+Version: 0.1.0
+
+USING
+  Download your binary file
+    $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download \
+          --repo|-p your-vendor/some-name \
+          --repo-file|-r dir/some-file.sh \
+          --version|-v v0.2.1
+
+OPTIONS
+  --versions    Show created tags.
+  --version|-v  Created tag name or branch name.
+                Default: last tag or master if there is no tags.
+  --repo|-p     Repository full name "vendor/name" in github.com.
+  --repo-file|-r
+                Requested file in the passed repository.
+  --file|-f     Path to save downloaded file.
+  --filename|-n Name to downloaded file by default path.
+                (/usr/local/bin or /usr/bin)
+  --finish-message
+                This will be showed in the end of downloading.
+                %s will be replaced with full path to downloaded file.
+                Default: "Binary file: %s\n"
+EOF
+}
+
+parse_options () {
+  # validate and redefine options
+  OPTS=`getopt -o hlv:f:r:p:n: -l help,versions,version:,file:,repo-file:,repo:,filename: -- "$@"`
+  eval set -- "${OPTS}"
+
+  while true; do
+    case "${1}" in
+      # Pass a target version. Default: master
+      --version|-v)
+        version="$2";
+        shift 2;
+        ;;
+      # Show versions
+      --versions|-l)
+        action='versions';
+        shift;
+        ;;
+      # Use param to set full path to created binary file
+      --file|-f)
+        output_file="$2";
+        shift 2;
+        ;;
+      # Use param to set filename in default path
+      --filename|-n)
+        output_filename="$2";
+        shift 2;
+        ;;
+      # Define path to a file in repository
+      --repo-file|-r)
+        repo_file="$2";
+        shift 2;
+        ;;
+      # Define repository name
+      --repo|-p)
+        repo_name="$2";
+        shift 2;
+        ;;
+      # Message in the end. %s will be replaced with a created file.
+      --finish-message|-m)
+        finish_message="$2";
+        shift 2;
+        ;;
+      # Show help
+      --help|-h)
+        show_help;
+        exit 0
+        shift;
+        ;;
+      --)
+        shift
+        break
+        ;;
+      *)
+        echo "${0}: unparseable option ${1}."
+        exit 3
+        ;;
+    esac
+  done
+}
+
+process_params () {
+  if [ -z "${repo_name:-}" ]; then
+    echo 'error: Repo name cannot be empty. Please define: -p|--repo vendor/name'
+    exit 3
+  fi
+  if [ -z "${repo_file:-}" ]; then
+    echo 'error: Request repository file cannot be empty. Please define: -r|--repo-file dir/filename'
+    exit 3
+  fi
+  if [ -z "${output_file:-}" ] && [ -z "${output_filename:-}" ] ; then
+    echo 'error: Output file cannot be empty.'
+    echo 'Please define file: -f|--file /usr/bin/filename'
+    echo 'Or define filename for using default path: -f|--filename filename'
+    exit 3
+  elif [ -n "${output_file:-}" ] && [ '/' != ${output_file::1} ]; then
+    echo 'error: Path to output file must absolute. Please define: -f|--file file_name'
+    exit 2
+  fi
+
+  # Use filename instead empty absolute file
+  if [ -z ${output_file} ]; then
+    default_path='/usr/local/bin'
+    if [ ! -d ${default_path} ]; then
+      default_path='/usr/bin'
+    fi
+    output_file=${default_path}/${output_filename}
+  fi
+
+  if [ ! -d $(dirname ${output_file}) ]; then
+    echo 'error: Directory "'$(dirname ${output_file})'" for output file does not exist.'
+    exit 2
+  fi
+
+  base_url='https://raw.github.com/'${repo_name}
+  base_api_url='https://api.github.com/repos/'${repo_name}
+}
+
+fetch_tags () {
+  curl -Ls ${base_api_url}/tags | grep '"name"' | cut -d '"' -f 4
+}
+
+touch_file () {
+  if [ ! -f "${output_file}" ]; then
+    touch ${output_file}
+    echo 1
+  else
+    echo 0
+  fi
+}
+
+fetch_file () {
+  curl -Ls ${base_url}/${version}/${repo_file} \
+    --fail -w '%{http_code}' --output ${output_file}
+}
+
+process_response () {
+  local http_code=$1
+  if [ '200' != "${http_code}" ]; then
+    echo "error: [${http_code}] No such version or bad connection."
+    if [ ${had_file} == 0 ]; then
+      rm -rf ${output_file}
+    fi
+    exit 8
+  fi
+}
+set_exec_permissions () {
+  if [[ ! "$(uname -a)" =~ 'Msys' ]]; then
+    chmod +x ${output_file}
+  fi
+}
+
+show_finish_message () {
+  printf "${finish_message}" "${output_file}"
+}
+
+download_script () {
+  local version finish_message action \
+    version output_file output_filename \
+    repo_name repo_file
+
+  finish_message='Binary file: %s'"\n"
+  action='download'
+
+  parse_options $@
+  process_params
+
+  if [ 'versions' == "${action}" ]; then
+    fetch_tags
+    exit 0
+  fi
+
+  # fetch last tag or use master
+  version=$(fetch_tags | head -1)
+  version=${version:-master}
+
+  echo "Fetching ${base_url}/${version}/${repo_file}..."
+  had_file=$(touch_file)
+  process_response $(fetch_file)
+  set_exec_permissions
+  show_finish_message
+}
+
+download_script $@
