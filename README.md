@@ -59,4 +59,4 @@ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -
     dir/some-file.sh -- --filename some-file \$@
 ```
 
-See example in [semversort project](/rikby/semversort/blob/master/download)
+See example in [semversort project](/../../../../rikby/semversort/blob/master/download)
