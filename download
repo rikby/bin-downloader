@@ -22,7 +22,7 @@ USING
           --version|-v v0.2.1
 
     $ curl URL | bash -s -- REPO FILE \\
-      [--end-message "message"|--help-app|--app-name "my name"] -- \\
+      [--end-message "message"|--app-name "my name"] -- \\
       [--file FILE|-f FILE|--filename NAME|-n NAME|--versions|--version 0.1.2]
 
     $ curl URL | bash -s -- REPO FILE [SCRIPT OPTIONS] -- [USER OPTIONS]
