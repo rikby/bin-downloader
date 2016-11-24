@@ -126,10 +126,8 @@ parse_options () {
     -l help,versions,version:,file:,repo-file:,repo:,filename:,app-name:,downloader: \
     -- "$@")
   eval set -- "${OPTS}"
-  echo ${OPTS}
 
   while true; do
-  echo "${1:-}"
     [ -z "${1:-}" ] && break
     case "${1}" in
       # Message in the end. %s will be replaced with a created file.
