@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Fetch binary file from github repository
 # See help:
-#   $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download --help
+#   $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- --help
 
 set -o errexit
 set -o pipefail
@@ -9,38 +9,143 @@ set -o nounset
 #set -o xtrace
 
 show_help () {
-  cat <<-'EOF'
+  cat <<-EOF
 GitHub binary scripts downloader
 Version: 0.1.0
 
 USING
   Download your binary file
-    $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download \
-          --repo|-p your-vendor/some-name \
-          --repo-file|-r dir/some-file.sh \
+    $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- \\
+          your-vendor/some-name \\
+          dir/some-file.sh -- \\
+          --filename|-f some-file \\
+          --version|-v v0.2.1
+
+    $ curl URL | bash -s -- REPO FILE \\
+      [--end-message "message"|--help-app|--app-name "my name"] -- \\
+      [--file FILE|-f FILE|--filename NAME|-n NAME|--versions|--version 0.1.2]
+
+    $ curl URL | bash -s -- REPO FILE [SCRIPT OPTIONS] -- [USER OPTIONS]
+
+SCRIPT SPECIFIC OPTIONS
+  REPO          Repository full name "vendor/name" in github.com.
+  FILE          Requested file in the passed repository.
+  --end-message This will be showed in the end of downloading.
+                %s will be replaced with full path to downloaded file.
+                Default: "Binary file: %s\n"
+  --app-help    Show help for application downloader
+  --app-name    Use passed name in help.
+
+END USER OPTIONS
+  --versions    Show created tags.
+  --version|-v  Created tag name or branch name.
+                Default: last tag or master if there is no tags.
+  --file|-f     Path to save downloaded file.
+  --filename|-n Name to downloaded file by default path.
+                (/usr/local/bin or /usr/bin)
+
+YOUR DOWNLOAD SCRIPT
+
+  Create your "download" script in your master branch in the repository root.
+  Please replace "your-vendor/some-name" string with your path.
+
+  #!/usr/bin/env bash
+  # Fetch binary file
+  #   $ curl -Ls https://raw.github.com/your-vendor/some-name/master/download | bash
+  # See help:
+  #   $ curl -Ls https://raw.github.com/your-vendor/some-name/master/download | bash -s -- --help
+
+  set -o errexit
+  set -o pipefail
+  set -o nounset
+  #set -o xtrace
+
+  # Download
+  $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- \\
+      your-vendor/some-name \\
+      dir/some-file.sh -- \$@
+EOF
+}
+
+show_app_help () {
+  local app_name=${1:-GitHub binary scripts downloader https://raw.github.com/rikby/bin-downloader}
+  cat <<-EOF
+${app_name}
+
+USING
+  Download your binary file
+    $ curl -Ls https://raw.github.com/${repo_name}/master/download | bash
+
+  Or use some options
+    $ curl -Ls https://raw.github.com/${repo_name}/master/download | bash -s -- \\
+          --filename|-f some-file \\
           --version|-v v0.2.1
 
 OPTIONS
   --versions    Show created tags.
   --version|-v  Created tag name or branch name.
                 Default: last tag or master if there is no tags.
-  --repo|-p     Repository full name "vendor/name" in github.com.
-  --repo-file|-r
-                Requested file in the passed repository.
   --file|-f     Path to save downloaded file.
-  --filename|-n Name to downloaded file by default path.
+  --filename|-n Name of downloaded file by default path.
                 (/usr/local/bin or /usr/bin)
-  --finish-message
-                This will be showed in the end of downloading.
-                %s will be replaced with full path to downloaded file.
-                Default: "Binary file: %s\n"
 EOF
 }
 
 parse_options () {
+  [ -z "${1:-}" ] && return
+
+  # Define repository name
+  if [ '-' != "${1::1}" ]; then
+    repo_name="$1";
+    shift
+  fi
+
+  [ -z "${1:-}" ] && return
+
+  # Define path to a file in repository
+  if [ '-' != "${1::1}" ]; then
+    repo_file="$1";
+    shift
+  fi
+
+  [ -z "${1:-}" ] && return
+
   # validate and redefine options
-  OPTS=`getopt -o hlv:f:r:p:n: -l help,versions,version:,file:,repo-file:,repo:,filename: -- "$@"`
+  OPTS=$(getopt \
+    -o hlv:f:r:p:n: \
+    -l help,versions,version:,file:,repo-file:,repo:,filename:,app-name \
+    -- "$@")
   eval set -- "${OPTS}"
+
+  while true; do
+    case "${1}" in
+      # Message in the end. %s will be replaced with a created file.
+      --end-message|-m)
+        end_message="$2";
+        shift 2;
+        ;;
+      --app-name)
+        app_name="$2";
+        shift 2;
+        ;;
+      # Show help
+      --help|-h)
+        show_help;
+        exit 0
+        shift;
+        ;;
+      --)
+        shift
+        break
+        ;;
+      *)
+        echo "${0}: unparseable option ${1}."
+        exit 3
+        ;;
+    esac
+  done
+
+  [ -z "${1:-}" ] && return
 
   while true; do
     case "${1}" in
@@ -64,26 +169,10 @@ parse_options () {
         output_filename="$2";
         shift 2;
         ;;
-      # Define path to a file in repository
-      --repo-file|-r)
-        repo_file="$2";
-        shift 2;
-        ;;
-      # Define repository name
-      --repo|-p)
-        repo_name="$2";
-        shift 2;
-        ;;
-      # Message in the end. %s will be replaced with a created file.
-      --finish-message|-m)
-        finish_message="$2";
-        shift 2;
-        ;;
-      # Show help
+      # Show application help
       --help|-h)
-        show_help;
-        exit 0
-        shift;
+        action='application_help'
+        shift
         ;;
       --)
         shift
@@ -99,25 +188,26 @@ parse_options () {
 
 process_params () {
   if [ -z "${repo_name:-}" ]; then
-    echo 'error: Repo name cannot be empty. Please define: -p|--repo vendor/name'
+    echo 'error: Repo name cannot be empty.'
+    echo 'Please define: vendor/name'
+    echo 'Use --help to get more info.'
     exit 3
   fi
   if [ -z "${repo_file:-}" ]; then
-    echo 'error: Request repository file cannot be empty. Please define: -r|--repo-file dir/filename'
+    echo 'error: Requested repository file cannot be empty.'
+    echo 'Please define: dir/file'
+    echo 'Use --help to get more info.'
     exit 3
   fi
   if [ -z "${output_file:-}" ] && [ -z "${output_filename:-}" ] ; then
-    echo 'error: Output file cannot be empty.'
-    echo 'Please define file: -f|--file /usr/bin/filename'
-    echo 'Or define filename for using default path: -f|--filename filename'
-    exit 3
+    output_filename=$(basename ${repo_file})
   elif [ -n "${output_file:-}" ] && [ '/' != ${output_file::1} ]; then
     echo 'error: Path to output file must absolute. Please define: -f|--file file_name'
     exit 2
   fi
 
   # Use filename instead empty absolute file
-  if [ -z ${output_file} ]; then
+  if [ -z "${output_file:-}" ]; then
     default_path='/usr/local/bin'
     if [ ! -d ${default_path} ]; then
       default_path='/usr/bin'
@@ -168,19 +258,23 @@ set_exec_permissions () {
   fi
 }
 
-show_finish_message () {
-  printf "${finish_message}" "${output_file}"
+show_end_message () {
+  printf "${end_message}" "${output_file}"
 }
 
 download_script () {
-  local version finish_message action \
+  local version end_message action \
     version output_file output_filename \
-    repo_name repo_file
+    repo_name repo_file app_name
 
-  finish_message='Binary file: %s'"\n"
+  end_message='Binary file: %s'"\n"
   action='download'
 
   parse_options $@
+  if [ 'application_help' == "${action}" ]; then
+    show_app_help "${app_name}"
+    exit 0
+  fi
   process_params
 
   if [ 'versions' == "${action}" ]; then
@@ -196,7 +290,7 @@ download_script () {
   had_file=$(touch_file)
   process_response $(fetch_file)
   set_exec_permissions
-  show_finish_message
+  show_end_message
 }
 
 download_script $@
