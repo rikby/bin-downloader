@@ -122,6 +122,7 @@ parse_options () {
   eval set -- "${OPTS}"
 
   while true; do
+    [ -z "${1:-}" ] && break
     case "${1}" in
       # Message in the end. %s will be replaced with a created file.
       --end-message|-m)
@@ -149,9 +150,8 @@ parse_options () {
     esac
   done
 
-  [ -z "${1:-}" ] && return
-
   while true; do
+    [ -z "${1:-}" ] && break
     case "${1}" in
       # Pass a target version. Default: master
       --version|-v)
@@ -179,6 +179,7 @@ parse_options () {
         shift
         ;;
       --)
+      echo ${1}
         shift
         break
         ;;
