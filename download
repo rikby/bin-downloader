@@ -3,10 +3,6 @@
 # See help:
 #   $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- --help
 
-: <<'LCS'
-
-LCS
-
 set -o errexit
 set -o pipefail
 set -o nounset
