@@ -33,8 +33,8 @@ SCRIPT SPECIFIC OPTIONS
   --end-message This will be showed in the end of downloading.
                 %s will be replaced with full path to downloaded file.
                 Default: "Binary file: %s\n"
-  --app-help    Show help for application downloader
   --app-name    Use passed name in help.
+  --help        Show this help. 
 
 END USER OPTIONS
   --versions    Show created tags.
@@ -43,6 +43,7 @@ END USER OPTIONS
   --file|-f     Path to save downloaded file.
   --filename|-n Name to downloaded file by default path.
                 (/usr/local/bin or /usr/bin)
+  --help        Show application help.
 
 YOUR DOWNLOAD SCRIPT
 
@@ -88,6 +89,7 @@ OPTIONS
   --file|-f     Path to save downloaded file.
   --filename|-n Name of downloaded file by default path.
                 (/usr/local/bin or /usr/bin)
+  --help        Show this help.
 EOF
 }
 
