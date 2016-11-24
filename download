@@ -2,6 +2,8 @@
 # Fetch binary file from github repository
 # See help:
 #   $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- --help
+# Short link: 
+#   https://goo.gl/ve2Xvw
 
 set -o errexit
 set -o pipefail
