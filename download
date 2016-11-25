@@ -240,7 +240,7 @@ process_params () {
 }
 
 fetch_tags () {
-  curl -Ls ${base_api_url}/tags | grep '"name"' | cut -d '"' -f 4
+  curl -Ls ${base_api_url}/tags | grep '"name"' | cut -d '"' -f 4 || true
 }
 
 touch_file () {
