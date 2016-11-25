@@ -287,7 +287,7 @@ download_script () {
 
   parse_options $@
   if [ 'application_help' == "${action}" ]; then
-    show_app_help "${app_name}"
+    show_app_help "${app_name:-}"
     exit 0
   fi
   process_params
