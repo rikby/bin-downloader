@@ -2,7 +2,7 @@
 # Fetch binary file from github repository
 # See help:
 #   $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- --help
-# Short link: 
+# Short link:
 #   https://goo.gl/ve2Xvw
 
 set -o errexit
@@ -77,7 +77,8 @@ EOF
 }
 
 show_app_help () {
-  local app_name=${1:-GitHub binary scripts downloader https://raw.github.com/rikby/bin-downloader}
+  local app_name
+  app_name=${1:-GitHub binary scripts downloader https://raw.github.com/rikby/bin-downloader}
   cat <<-EOF
 ${app_name}
 
@@ -201,7 +202,7 @@ parse_options () {
   done
 }
 
-process_params () {
+process_repo_params() {
   if [ -z "${repo_name:-}" ]; then
     echo 'error: Repo name cannot be empty.'
     echo 'Please define: vendor/name'
@@ -214,6 +215,11 @@ process_params () {
     echo 'Use --help to get more info.'
     exit 3
   fi
+  base_url='https://raw.github.com/'${repo_name}
+  base_api_url='https://api.github.com/repos/'${repo_name}
+}
+
+process_params () {
   if [ -z "${output_file:-}" ] && [ -z "${output_filename:-}" ] ; then
     output_filename=$(basename ${repo_file})
   elif [ -n "${output_file:-}" ] && [ '/' != ${output_file::1} ]; then
@@ -234,9 +240,6 @@ process_params () {
     echo 'error: Directory "'$(dirname ${output_file})'" for output file does not exist.'
     exit 2
   fi
-
-  base_url='https://raw.github.com/'${repo_name}
-  base_api_url='https://api.github.com/repos/'${repo_name}
 }
 
 fetch_tags () {
@@ -286,10 +289,14 @@ download_script () {
   action='download'
 
   parse_options $@
+
+  process_repo_params
+
   if [ 'application_help' == "${action}" ]; then
     show_app_help "${app_name:-}"
     exit 0
   fi
+
   process_params
 
   if [ 'versions' == "${action}" ]; then
@@ -309,4 +316,3 @@ download_script () {
 }
 
 download_script $@
-
