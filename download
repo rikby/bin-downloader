@@ -15,8 +15,8 @@ show_help () {
 GitHub binary scripts downloader
 Version: 0.1.0 (2016-11-24)
 
-USING
-  Download your binary file
+USING EXAMPLES
+  Download binary file
     $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- \\
           your-vendor/some-name \\
           dir/some-file.sh -- \\
