@@ -72,14 +72,14 @@ Version: 0.1.0
 
 USING
   Download your binary file
-    $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- \\
-          your-vendor/some-name \\
-          dir/some-file.sh -- \\
-          --filename|-f some-file \\
+    $ curl -Ls https://raw.github.com/rikby/bin-downloader/master/download | bash -s -- \
+          your-vendor/some-name \
+          dir/some-file.sh -- \
+          --filename|-f some-file \
           --version|-v v0.2.1
 
-    $ curl URL | bash -s -- REPO FILE \\
-      [--end-message "message"|--app-name "my name"] -- \\
+    $ curl URL | bash -s -- REPO FILE \
+      [--end-message "message"|--app-name "my name"] -- \
       [--file FILE|-f FILE|--filename NAME|-n NAME|--versions|--version 0.1.2]
 
     $ curl URL | bash -s -- REPO FILE [SCRIPT OPTIONS] -- [USER OPTIONS]
