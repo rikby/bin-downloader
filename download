@@ -305,8 +305,10 @@ download_script () {
   fi
 
   # fetch last tag or use master
-  version=$(fetch_tags | head -1)
-  version=${version:-master}
+  if [ -z "${version:-}" ]; then
+    version=$(fetch_tags | head -1)
+    version=${version:-master}
+  fi
 
   echo "Fetching ${base_url}/${version}/${repo_file}..."
   had_file=$(touch_file)
