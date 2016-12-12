@@ -155,7 +155,7 @@ parse_options () {
         break
         ;;
       *)
-        echo "${0}: unparseable option ${1}."
+        echo "${0}: unparseable option ${1}." > /dev/stderr
         exit 3
         ;;
     esac
@@ -210,9 +210,9 @@ process_repo_params() {
     exit 3
   fi
   if [ -z "${repo_file:-}" ]; then
-    echo 'error: Requested repository file cannot be empty.'
-    echo 'Please define: dir/file'
-    echo 'Use --help to get more info.'
+    echo 'error: Requested repository file cannot be empty.' > /dev/stderr
+    echo 'Please define: dir/file' > /dev/stderr
+    echo 'Use --help to get more info.' > /dev/stderr
     exit 3
   fi
   base_url='https://raw.github.com/'${repo_name}
@@ -223,7 +223,7 @@ process_params () {
   if [ -z "${output_file:-}" ] && [ -z "${output_filename:-}" ] ; then
     output_filename=$(basename ${repo_file})
   elif [ -n "${output_file:-}" ] && [ '/' != ${output_file::1} ]; then
-    echo 'error: Path to output file must absolute. Please define: -f|--file file_name'
+    echo 'error: Path to output file must absolute. Please define: -f|--file file_name' > /dev/stderr
     exit 2
   fi
 
@@ -237,7 +237,7 @@ process_params () {
   fi
 
   if [ ! -d $(dirname ${output_file}) ]; then
-    echo 'error: Directory "'$(dirname ${output_file})'" for output file does not exist.'
+    echo 'error: Directory "'$(dirname ${output_file})'" for output file does not exist.' > /dev/stderr
     exit 2
   fi
 }
@@ -247,8 +247,15 @@ fetch_tags () {
 }
 
 touch_file () {
+  if [ -d "${output_file}" ]; then
+    echo "error: There is a directory '${output_file}' by target file path." > /dev/stderr
+    exit 2
+  fi
   if [ ! -f "${output_file}" ]; then
-    touch ${output_file}
+    if [ -z "$(touch ${output_file} && echo 1 || true)" ]; then
+      echo "error: Cannot create file '${output_file}'. Please check permissions." > /dev/stderr
+      exit 2
+    fi
     echo 1
   else
     echo 0
@@ -263,7 +270,7 @@ fetch_file () {
 process_response () {
   local http_code=$1
   if [ '200' != "${http_code}" ]; then
-    echo "error: [${http_code}] No such version or bad connection."
+    echo "error: [${http_code}] No such version or bad connection." > /dev/stderr
     if [ ${had_file} == 0 ]; then
       rm -rf ${output_file}
     fi
