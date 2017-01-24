@@ -196,7 +196,8 @@ parse_options () {
         ;;
       *)
         echo "${0}: unparseable option ${1}."
-        exit 3
+        #exit 3
+        break
         ;;
     esac
   done
