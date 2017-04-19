@@ -13,7 +13,7 @@ set -o nounset
 show_help () {
   cat <<-EOF
 GitHub binary scripts downloader
-Version: 0.1.0 (2016-11-25)
+Version: 0.2.0 (2017-04-19)
 
 USING EXAMPLES
   Download binary file
@@ -220,7 +220,30 @@ process_repo_params() {
   base_api_url='https://api.github.com/repos/'${repo_name}
 }
 
+init_user_home_bin() {
+  if [ ! -d "$(cd; pwd)/bin" ]; then
+    mkdir -p "$(cd; pwd)/bin"
+  fi
+}
+
+writable_bin_path() {
+  local path_delimiter IFS paths
+  path_delimiter=$(echo ${PATH} | grep -oE '[;:]' | head -1)
+  while IFS="${path_delimiter}" read -ra paths; do
+    for i in "${paths[@]}"; do
+      if echo "${i}" | grep -E '^(/usr/|'$(cd; pwd)')' | grep -vE '(composer|vendor)' > /dev/null && [[ "${i}" =~ \/bin$ ]]; then
+        if touch ${i}/test_touch 2> /dev/null; then
+          rm -rf ${i}/test_touch
+          echo ${i}
+          break
+        fi
+      fi
+    done
+  done <<< "$PATH"
+}
+
 process_params () {
+  local bin_dir
   if [ -z "${output_file:-}" ] && [ -z "${output_filename:-}" ] ; then
     output_filename=$(basename ${repo_file})
   elif [ -n "${output_file:-}" ] && [ '/' != ${output_file::1} ]; then
@@ -230,11 +253,12 @@ process_params () {
 
   # Use filename instead empty absolute file
   if [ -z "${output_file:-}" ]; then
-    default_path='/usr/local/bin'
-    if [ ! -d ${default_path} ]; then
-      default_path='/usr/bin'
+    bin_dir=$(writable_bin_path)
+    if [ -z "${bin_dir}" ]; then
+      echo 'error: There is no writable binary directory. Please check ${PATH} environment variable or define custom path: -f|--file file_name' > /dev/stderr
+      exit 2
     fi
-    output_file=${default_path}/${output_filename}
+    output_file=${bin_dir}/${output_filename}
   fi
 
   if [ ! -d $(dirname ${output_file}) ]; then
