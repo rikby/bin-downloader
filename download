@@ -228,6 +228,7 @@ init_user_home_bin() {
 
 writable_bin_path() {
   local path_delimiter IFS paths
+  init_user_home_bin
   path_delimiter=$(echo ${PATH} | grep -oE '[;:]' | head -1)
   while IFS="${path_delimiter}" read -ra paths; do
     for i in "${paths[@]}"; do
